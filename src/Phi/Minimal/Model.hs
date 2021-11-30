@@ -365,3 +365,30 @@ church_exp = lam (lam (app m n ))
     n = Dot (Loc 1) "𝜑"
     m = Dot (Loc 0) "𝜑"
 
+church_num_as_obj :: Term -> Term
+church_num_as_obj t = Obj
+  [ ("d", Attached t)
+  , ("add_", Attached $ Obj
+      [ ("this", VoidAttr)
+      , ("n", VoidAttr)
+      , ("𝜑", Attached (Loc 1))
+      , ("add", Attached $ (App (Dot (Loc 0) "add_") ("this", Loc 0)))
+      , ("d", Attached (app (app church_plus (Dot (Dot (Loc 0) "this") "d")) (Dot (Dot (Loc 0) "n") "d"))) ])
+  , ("add", Attached $ (App (Dot (Loc 0) "add_") ("this", Loc 0)))
+  ]
+
+church_int :: Term
+church_int = (`Dot` "𝜑") $ Obj
+  [ ("𝜑", Attached $ Obj
+      [ ("d", VoidAttr)
+      , ("add", Attached $ Obj
+          [ ("n", VoidAttr)
+          , ("𝜑", Attached (App (Dot (Loc 2) "𝜑")
+              ("d", app (app church_plus (Dot (Loc 1) "d")) (Dot (Dot (Loc 0) "n") "d")))) ])
+      ])
+  ]
+
+instance Num Term where
+  fromInteger = church_num_as_obj . church_n . fromInteger
+  -- fromInteger = App church_int . (,) "d" . church_n . fromInteger
+  x + y = App (Dot x "add") ("n", y)
